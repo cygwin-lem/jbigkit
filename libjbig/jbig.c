@@ -1747,7 +1747,7 @@ void jbg_int2dppriv(unsigned char *dptable, const char *internal)
 #define FILL_TABLE1(offset, len, trans) \
   for (i = 0; i < len; i++) { \
     k = 0; \
-    for (j = 0; j < 8; j++) \
+    for (j = 0; i >> j; j++) \
       k |= ((i >> j) & 1) << trans[j]; \
     dptable[(i + offset) >> 2] |= \
       (internal[k + offset] & 3) << ((3 - (i&3)) << 1); \
@@ -1778,7 +1778,7 @@ void jbg_dppriv2int(char *internal, const unsigned char *dptable)
 #define FILL_TABLE2(offset, len, trans) \
   for (i = 0; i < len; i++) { \
     k = 0; \
-    for (j = 0; j < 8; j++) \
+    for (j = 0; i >> j; j++) \
       k |= ((i >> j) & 1) << trans[j]; \
     internal[k + offset] = \
       (dptable[(i + offset) >> 2] >> ((3 - (i & 3)) << 1)) & 3; \
@@ -2583,6 +2583,7 @@ int jbg_dec_in(struct jbg_dec_state *s, unsigned char *data, size_t len,
   unsigned long x, y;
   unsigned long is[3], ie[3];
   size_t dummy_cnt;
+  unsigned char *dppriv;
 
   if (!cnt) cnt = &dummy_cnt;
   *cnt = 0;
@@ -2720,13 +2721,16 @@ int jbg_dec_in(struct jbg_dec_state *s, unsigned char *data, size_t len,
       (s->options & (JBG_DPON | JBG_DPPRIV | JBG_DPLAST)) ==
       (JBG_DPON | JBG_DPPRIV)) {
     assert(s->bie_len >= 20);
-    while (s->bie_len < 20 + 1728 && *cnt < len)
-      s->buffer[s->bie_len++ - 20] = data[(*cnt)++];
-    if (s->bie_len < 20 + 1728) 
-      return JBG_EAGAIN;
     if (!s->dppriv || s->dppriv == jbg_dptable)
       s->dppriv = (char *) checked_malloc(1728, sizeof(char));
-    jbg_dppriv2int(s->dppriv, s->buffer);
+    while (s->bie_len < 20 + 1728 && *cnt < len)
+      s->dppriv[s->bie_len++ - 20] = data[(*cnt)++];
+    if (s->bie_len < 20 + 1728) 
+      return JBG_EAGAIN;
+    dppriv = s->dppriv;
+    s->dppriv = (char *) checked_malloc(6912, sizeof(char));
+    jbg_dppriv2int(s->dppriv, dppriv);
+    checked_free(dppriv);
   }
 
   /*
