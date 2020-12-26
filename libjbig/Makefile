@@ -3,11 +3,13 @@
 
 # Select an ANSI/ISO C compiler here, GNU gcc is recommended
 CC = gcc
+AR = ar
+RANLIB = ranlib
 
 # Options for the compiler: A high optimization level is suggested
 CFLAGS = -g -O -Wall -ansi -pedantic # --coverage
 
-all: libjbig.a tstcodec tstcodec85
+all: cygjbig-2.dll cygjbig85-2.dll libjbig.a libjbig85.a tstcodec tstcodec85
 
 tstcodec: tstcodec.o jbig.o jbig_ar.o
 	$(CC) $(CFLAGS) -o tstcodec $+
@@ -15,15 +17,21 @@ tstcodec: tstcodec.o jbig.o jbig_ar.o
 tstcodec85: tstcodec85.o jbig85.o jbig_ar.o
 	$(CC) $(CFLAGS) -o tstcodec85 $+
 
+cygjbig-2.dll: jbig.o jbig_ar.o
+	$(CC) -shared -Wl,--out-implib,libjbig.dll.a -o $@ $^
+
 libjbig.a: jbig.o jbig_ar.o
 	rm -f libjbig.a
-	ar rc libjbig.a jbig.o jbig_ar.o
-	-ranlib libjbig.a
+	$(AR) rc libjbig.a jbig.o jbig_ar.o
+	-$(RANLIB) libjbig.a
+
+cygjbig85-2.dll: jbig85.o jbig_ar.o
+	$(CC) -shared -Wl,--out-implib,libjbig85.dll.a -o $@ $^
 
 libjbig85.a: jbig85.o jbig_ar.o
 	rm -f libjbig85.a
-	ar rc libjbig85.a jbig85.o jbig_ar.o
-	-ranlib libjbig85.a
+	$(AR) rc libjbig85.a jbig85.o jbig_ar.o
+	-$(RANLIB) libjbig85.a
 
 jbig.o: jbig.c jbig.h jbig_ar.h
 jbig85.o: jbig85.c jbig85.h jbig_ar.h
