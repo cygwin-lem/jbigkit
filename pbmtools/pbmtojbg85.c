@@ -74,10 +74,9 @@ static unsigned long getint(FILE *f)
   if (c == EOF) return 0;
   ungetc(c, f);
   if (fscanf(f, "%lu", &i) != 1) {
-    fprintf(stderr, "Unsigned integer value expected!\n");
+    fprintf(stderr, "Unexpected failure reading digit '%c'\n", c);
     exit(1);
   }
-
   return i;
 }
 
@@ -243,7 +242,9 @@ int main (int argc, char **argv)
       break;
     case '4':
       /* PBM raw binary format */
-      fread(next_line, bpl, 1, fin);
+      if (fread(next_line, bpl, 1, fin) != 1) {
+	/* silence compiler warnings; ferror/feof checked below */
+      }
       break;
     default:
       fprintf(stderr, "Unsupported PBM type P%c!\n", type);
